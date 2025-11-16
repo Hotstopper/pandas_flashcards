@@ -1,0 +1,76 @@
+# Indexing / selection
+Select single vs multiple columns from df ::: df["col"]   # Series ; df[["a", "b"]]   # DataFrame
+Select first 10 rows by position ::: df.iloc[:10]
+Boolean filter simple (x > 0) ::: df[df["x"] > 0]
+Boolean filter with .loc (x > 0, only x,y) ::: df.loc[df["x"] > 0, ["x", "y"]]
+Multiple boolean conditions: x>0 AND y is NaN ::: df[(df["x"] > 0) & (df["y"].isna())]
+
+# Index / columns
+Reset index and drop old index column ::: df = df.reset_index(drop=True)
+Drop columns col1 and col2 ::: df = df.drop(columns=["col1", "col2"])
+Rename columns: old_name → new_name ::: df = df.rename(columns={"old_name": "new_name"})
+Sort by col1 ascending, col2 descending ::: df = df.sort_values(["col1", "col2"], ascending=[True, False])
+Set col as index ::: df = df.set_index("col")
+
+# Groupby
+Groupby mean of y by id (Series) ::: df.groupby("id")["y"].mean()
+Groupby mean of y by id, id as column ::: df.groupby("id", as_index=False)["y"].mean()
+Groupby multiple aggs on y: mean, std, n ::: df.groupby("id", as_index=False).agg(mean_y=("y", "mean"), sd_y=("y", "std"), n=("y", "size"))
+Groupby transform: demean y within each id ::: df["y_demeaned"] = df["y"] - df.groupby("id")["y"].transform("mean")
+Groupby: rank y within each id ::: df["rank_y"] = df.groupby("id")["y"].rank()
+
+# Merge / join
+Basic left join on key 'id' ::: df = df_left.merge(df_right, how="left", on="id")
+Inner join on ['country','year'] ::: df = df1.merge(df2, how="inner", on=["country", "year"])
+Outer join with suffixes ::: df = df1.merge(df2, how="outer", on="id", suffixes=("_1", "_2"))
+Left join with different key names: cust_id vs id ::: df = df_orders.merge(df_customers, how="left", left_on="cust_id", right_on="id")
+Semi-join: keep rows in df_left with id in df_right ::: df = df_left[df_left["id"].isin(df_right["id"])]
+Anti-join: keep rows in df_left with id NOT in df_right ::: df = df_left[~df_left["id"].isin(df_right["id"])]
+
+# Reshape
+Wide → long with melt (id='id', value_vars=['x','y']) ::: long = df.melt(id_vars=["id"], value_vars=["x", "y"], var_name="variable", value_name="value")
+Long → wide with pivot (id, variable, value) ::: wide = long.pivot(index="id", columns="variable", values="value").reset_index()
+Pivot table: country × year of mean gdp ::: pt = df.pivot_table(index="country", columns="year", values="gdp", aggfunc="mean")
+
+# Datetime
+Parse datetime column safely (coerce) ::: df["date"] = pd.to_datetime(df["date"], errors="coerce")
+Set datetime index to 'date' and sort ::: df = df.set_index("date").sort_index()
+Resample to monthly sum of value ::: monthly = df.resample("M")["value"].sum()
+Filter by date range 2020 ::: df.loc["2020-01-01":"2020-12-31"]
+
+# Missing / duplicates
+Count NaNs per column ::: df.isna().sum()
+Drop rows with any NaNs ::: df_clean = df.dropna()
+Fill NaNs in x with 0, then forward fill ::: df["x"] = df["x"].fillna(0); df = df.ffill()
+Drop duplicates by ['id','date'] ::: df_unique = df.drop_duplicates(subset=["id", "date"], keep="first")
+
+# Misc / patterns
+Value counts and normalized frequencies of 'cat' ::: counts = df["cat"].value_counts(); freq = df["cat"].value_counts(normalize=True)
+Basic chain: filter x>0, select id,x,y, sort by id,x ::: out = df.loc[df["x"] > 0, ["id", "x", "y"]].sort_values(["id", "x"])
+Use pipe for custom function add_return(df) ::: out = df.query("volume > 0").pipe(lambda d: d.assign(ret=d["price"].pct_change())).dropna(subset=["ret"])
+
+# Column creation / types
+Create new column z = x + y ::: df["z"] = df["x"] + df["y"]
+Create multiple columns with .assign ::: df = df.assign(x2=df["x"] ** 2, xy=df["x"] * df["y"])
+Conditional column with np.where (pos = 1 if x>0 else 0) ::: df["pos"] = np.where(df["x"] > 0, 1, 0)
+Change dtype of col to float ::: df["col"] = df["col"].astype("float")
+Cast col to category ::: df["col"] = df["col"].astype("category")
+Drop rows with NaN only in col1 or col2 ::: df = df.dropna(subset=["col1", "col2"])
+
+# String methods
+Lowercase and strip whitespace in col ::: df["col"] = df["col"].str.strip().str.lower()
+Filter rows where col contains 'foo' (case-insensitive) ::: df[df["col"].str.contains("foo", case=False, na=False)]
+Replace 'NYC' with 'New York' in col ::: df["col"] = df["col"].replace({"NYC": "New York"})
+Extract 3-digit number from col into new column code ::: df["code"] = df["col"].str.extract(r"(\d{3})")
+
+# String methods
+Lowercase and strip whitespace in col ::: df["col"] = df["col"].str.strip().str.lower()
+Filter rows where col contains 'foo' (case-insensitive) ::: df[df["col"].str.contains("foo", case=False, na=False)]
+Replace 'NYC' with 'New York' in col ::: df["col"] = df["col"].replace({"NYC": "New York"})
+Extract 3-digit number from col into new column code ::: df["code"] = df["col"].str.extract(r"(\d{3})")
+
+# I/O
+Read CSV with date parsed and used as index ::: df = pd.read_csv("file.csv", parse_dates=["date"], index_col="date")
+Read CSV selecting only some columns ::: df = pd.read_csv("file.csv", usecols=["col1", "col2", "col3"])
+Write DataFrame to CSV without index ::: df.to_csv("out.csv", index=False)
+Write DataFrame to compressed CSV ::: df.to_csv("out.csv.gz", index=False, compression="gzip")
