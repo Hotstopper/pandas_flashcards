@@ -13,7 +13,6 @@ Sort by col1 ascending, col2 descending ::: df = df.sort_values(["col1", "col2"]
 Set col as index ::: df = df.set_index("col")
 
 # Groupby
-Groupby mean of y by id (Series) ::: df.groupby("id")["y"].mean()
 Groupby mean of y by id, id as column ::: df.groupby("id", as_index=False)["y"].mean()
 Groupby multiple aggs on y: mean, std, n ::: df.groupby("id", as_index=False).agg(mean_y=("y", "mean"), sd_y=("y", "std"), n=("y", "size"))
 Groupby transform: demean y within each id ::: df["y_demeaned"] = df["y"] - df.groupby("id")["y"].transform("mean")
@@ -72,5 +71,4 @@ Extract 3-digit number from col into new column code ::: df["code"] = df["col"].
 # I/O
 Read CSV with date parsed and used as index ::: df = pd.read_csv("file.csv", parse_dates=["date"], index_col="date")
 Read CSV selecting only some columns ::: df = pd.read_csv("file.csv", usecols=["col1", "col2", "col3"])
-Write DataFrame to CSV without index ::: df.to_csv("out.csv", index=False)
-Write DataFrame to compressed CSV ::: df.to_csv("out.csv.gz", index=False, compression="gzip")
+Write DataFrame to compressed CSV without index ::: df.to_csv("out.csv.gz", index=False, compression="gzip")
